@@ -1,0 +1,2136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Cyber Navigator - Beta Edition (v1.2.0)</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; user-select:none; }
+        body { 
+            font-family: 'Segoe UI', 'Roboto', monospace; 
+            background: linear-gradient(135deg, #0a0a0a, #1a1a2e, #16213e);
+            overflow:hidden; 
+            color:#00ff00; 
+            touch-action:none; 
+        }
+        
+        .game-world { 
+            position: relative; 
+            width:100vw; 
+            height:100vh; 
+            background: 
+                radial-gradient(2px 2px at 20px 30px,#00ffff,transparent), 
+                radial-gradient(2px 2px at 40px 70px,#ff00ff,transparent),
+                radial-gradient(1px 1px at 60px 20px,#ffff00,transparent); 
+            background-repeat:repeat; 
+            background-size:200px 100px; 
+            animation:starfield 12s linear infinite; 
+            will-change: background-position;
+        }
+        
+        @keyframes starfield { 
+            from { background-position:0 0 } 
+            to { background-position:-200px -100px } 
+        }
+
+        .menu { 
+            position:fixed; 
+            inset:0; 
+            display:flex; 
+            align-items:center; 
+            justify-content:center; 
+            z-index:1000; 
+            background: linear-gradient(180deg, rgba(5,0,20,0.98), rgba(10,0,40,0.95)); 
+            backdrop-filter: blur(20px);
+        }
+        .menu.hidden { display:none; }
+        
+        .menu-content { 
+            width:min(900px,95%); 
+            padding:40px; 
+            border-radius:24px; 
+            background: linear-gradient(135deg, rgba(15,10,35,0.8), rgba(25,15,50,0.7)); 
+            border: 2px solid rgba(0,255,255,0.3);
+            box-shadow: 0 20px 60px rgba(0,255,255,0.2);
+            display:flex; 
+            gap:24px; 
+            align-items:center; 
+        }
+        
+        .title { 
+            font-size:48px; 
+            background: linear-gradient(45deg, #ff66ff, #00ffff, #66ff66);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom:12px; 
+            font-weight: 900;
+            text-shadow: 0 0 30px rgba(255,102,255,0.5);
+        }
+        
+        .subtitle {
+            color: #88ddff;
+            font-size: 18px;
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+        
+        .menu-left{flex:1}
+        .menu-right{
+            width:300px; 
+            display:flex; 
+            flex-direction:column; 
+            gap:16px; 
+            align-items:center;
+        }
+
+        .hud { 
+            position:fixed; 
+            top:15px; 
+            left:15px; 
+            right:15px; 
+            display:flex; 
+            justify-content:space-between; 
+            z-index:100; 
+            gap:12px; 
+        }
+        
+        .hud-item { 
+            background: linear-gradient(135deg, rgba(0,10,30,0.9), rgba(10,20,40,0.8)); 
+            border: 1px solid rgba(0,255,255,0.4); 
+            padding:8px 14px; 
+            border-radius:12px; 
+            font-size:14px; 
+            color:#9fffe6; 
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,255,255,0.1);
+            font-weight: 600;
+        }
+
+        .spaceship { 
+            position:absolute; 
+            width:50px; 
+            height:50px; 
+            background: linear-gradient(45deg,#00ffff,#0088ff); 
+            clip-path: polygon(50% 0%, 20% 100%, 80% 100%); 
+            z-index:10; 
+            filter: drop-shadow(0 0 20px #00ffff); 
+            transition:all 0.1s ease; 
+            will-change: transform;
+        }
+
+        .spaceship.zeus-active {
+            filter: drop-shadow(0 0 25px #ffff00) drop-shadow(0 0 40px #ffffff);
+            animation: zeus-glow 0.5s ease-in-out infinite alternate;
+        }
+
+        .spaceship.level50 {
+            filter: drop-shadow(0 0 30px #ff00ff) drop-shadow(0 0 50px #ffff00);
+            animation: level50-glow 0.8s ease-in-out infinite alternate;
+        }
+
+        @keyframes zeus-glow {
+            from { transform: scale(1); }
+            to { transform: scale(1.05); }
+        }
+
+        @keyframes level50-glow {
+            from { transform: scale(1) rotate(0deg); }
+            to { transform: scale(1.1) rotate(2deg); }
+        }
+
+        .assistant-ship {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(45deg, #00ff88, #0088aa);
+            clip-path: polygon(50% 0%, 10% 100%, 90% 100%);
+            z-index: 9;
+            filter: drop-shadow(0 0 15px #00ff88);
+            animation: assistant-orbit 3s linear infinite;
+        }
+
+        @keyframes assistant-orbit {
+            from { transform: rotate(0deg) translateX(80px) rotate(0deg); }
+            to { transform: rotate(360deg) translateX(80px) rotate(-360deg); }
+        }
+
+        .notif { 
+            position:fixed; 
+            right:20px; 
+            top:100px; 
+            background: linear-gradient(135deg,#1a1c2a,#2a2c3a); 
+            color:#dfffe0; 
+            padding:12px 18px; 
+            border-radius:16px; 
+            border: 2px solid rgba(0,255,0,0.3);
+            z-index:400; 
+            opacity:0; 
+            pointer-events:none; 
+            transition:opacity .3s, transform .3s; 
+            transform: translateY(-10px); 
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 32px rgba(0,255,0,0.2);
+            font-weight: 600;
+        }
+        .notif.show { opacity:1; transform: translateY(0); pointer-events:auto; }
+        .notif.ares { border-color: rgba(255,0,0,0.6); box-shadow: 0 8px 32px rgba(255,0,0,0.3); }
+        .notif.zeus { border-color: rgba(255,255,0,0.6); box-shadow: 0 8px 32px rgba(255,255,0,0.3); }
+        .notif.hermes { border-color: rgba(255,102,255,0.8); box-shadow: 0 8px 32px rgba(255,102,255,0.5); }
+
+        .health-bar { 
+            position:fixed; 
+            bottom:80px; 
+            left:25px; 
+            width:240px; 
+            height:18px; 
+            background: linear-gradient(90deg, rgba(255,0,0,0.2), rgba(255,100,0,0.15)); 
+            border-radius:12px; 
+            border: 2px solid rgba(255,255,255,0.2);
+            overflow: hidden;
+        }
+        
+        .health-fill { 
+            height:100%; 
+            background: linear-gradient(90deg,#ff0000,#ffaa00,#00ff00); 
+            border-radius:10px; 
+            transition: width .4s ease; 
+            box-shadow: 0 0 20px rgba(0,255,0,0.5);
+        }
+
+        .boss-health-bar {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 500px;
+            height: 28px;
+            background: linear-gradient(90deg, rgba(255,0,0,0.3), rgba(255,50,0,0.2));
+            border-radius: 15px;
+            border: 3px solid rgba(255,255,255,0.4);
+            overflow: hidden;
+            display: none;
+            z-index: 120;
+        }
+
+        .boss-health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ff6600, #ffaa00);
+            border-radius: 12px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 25px rgba(255,102,0,0.7);
+        }
+
+        .boss-name {
+            position: fixed;
+            top: 105px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ff6600;
+            font-size: 20px;
+            font-weight: 900;
+            text-shadow: 0 0 15px rgba(255,102,0,0.8);
+            display: none;
+            z-index: 120;
+        }
+
+        .hermes-boss {
+            position: fixed;
+            top: 110px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ff66ff;
+            font-size: 24px;
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(255,102,255,0.9);
+            display: none;
+            z-index: 120;
+            animation: hermes-text 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes hermes-text {
+            from { text-shadow: 0 0 20px rgba(255,102,255,0.9); }
+            to { text-shadow: 0 0 35px rgba(255,102,255,1), 0 0 50px rgba(255,255,255,0.8); }
+        }
+
+        .controls { 
+            position:fixed; 
+            bottom:25px; 
+            left:25px; 
+            right:25px; 
+            display:flex; 
+            justify-content:space-between; 
+            align-items:center; 
+            z-index:100; 
+        }
+        
+        .score { 
+            background: linear-gradient(135deg, rgba(0,10,30,0.9), rgba(10,20,40,0.8)); 
+            border: 2px solid rgba(0,255,255,0.4); 
+            padding:10px 20px; 
+            border-radius:16px; 
+            color:#bddfdf; 
+            font-weight:700; 
+            backdrop-filter: blur(15px);
+            box-shadow: 0 6px 25px rgba(0,255,255,0.2);
+            font-size: 16px;
+        }
+
+        .enemy { 
+            position:absolute; 
+            width:35px; 
+            height:35px; 
+            background: linear-gradient(180deg,#ff5577,#aa0044); 
+            border-radius:8px; 
+            box-shadow: 0 6px 16px rgba(170,0,68,0.4); 
+            will-change: transform;
+        }
+        .enemy.tank { 
+            width:70px; 
+            height:50px; 
+            background: linear-gradient(180deg,#ffaa33,#cc6622); 
+            border-radius:12px; 
+        }
+        .enemy.shooter { 
+            width:40px; 
+            height:40px; 
+            background: linear-gradient(180deg,#ff66cc,#993366); 
+            border-radius:50%; 
+        }
+        .enemy.miniboss {
+            width: 90px;
+            height: 70px;
+            background: linear-gradient(180deg, #ff3366, #cc1144, #990022);
+            border-radius: 15px;
+            border: 3px solid #ff6600;
+            box-shadow: 0 10px 25px rgba(255,51,102,0.6);
+        }
+        .enemy.boss {
+            width: 120px;
+            height: 90px;
+            background: linear-gradient(180deg, #ff0033, #cc0022, #990011);
+            border-radius: 20px;
+            border: 4px solid #ff9900;
+            box-shadow: 0 15px 35px rgba(255,0,51,0.8);
+        }
+        .enemy.hermes {
+            width: 160px;
+            height: 120px;
+            background: linear-gradient(180deg, #ff00ff, #cc00cc, #990099, #660066);
+            border-radius: 25px;
+            border: 5px solid #ffff00;
+            box-shadow: 0 20px 50px rgba(255,0,255,0.9);
+            animation: hermes-float 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes hermes-float {
+            from { transform: translateY(0px) scale(1); }
+            to { transform: translateY(-15px) scale(1.02); }
+        }
+
+        .bullet { 
+            position:absolute; 
+            width:6px; 
+            height:14px; 
+            background: linear-gradient(180deg, #ffffff, #00ffff); 
+            border-radius:4px; 
+            box-shadow:0 0 12px rgba(255,255,255,0.8);
+            will-change: transform; 
+        }
+        .bullet.penetrating {
+            background: linear-gradient(180deg, #ffff00, #ff6600);
+            box-shadow: 0 0 15px rgba(255,255,0,0.9);
+            width: 8px;
+            height: 16px;
+        }
+        .enemy-bullet { 
+            width:8px; 
+            height:16px; 
+            background: linear-gradient(180deg, #ff8a8a, #ff0000); 
+            box-shadow:0 0 12px rgba(255,138,138,0.8);
+            will-change: transform; 
+        }
+
+        .powerup { 
+            position:absolute; 
+            width:28px; 
+            height:28px; 
+            background: linear-gradient(180deg,#77ffcc,#22aa88); 
+            border-radius:8px; 
+            border: 2px solid rgba(255,255,255,0.3);
+            animation: powerup-float 2s ease-in-out infinite alternate;
+            will-change: transform;
+        }
+
+        @keyframes powerup-float {
+            from { transform: translateY(0px) rotate(0deg); }
+            to { transform: translateY(-8px) rotate(10deg); }
+        }
+
+        .powerup.triple { 
+            background: linear-gradient(180deg,#fff799,#ffcc00); 
+            width:32px; 
+            height:32px; 
+            border-radius:50%; 
+            box-shadow: 0 8px 25px rgba(255,204,51,0.4); 
+        }
+        .powerup.health { 
+            background: linear-gradient(180deg,#ff9999,#ff6666); 
+            box-shadow: 0 8px 25px rgba(255,102,102,0.4);
+        }
+        .powerup.speed { 
+            background: linear-gradient(180deg,#99ddff,#3a9bd6); 
+            box-shadow: 0 8px 25px rgba(57,155,214,0.4);
+        }
+        .powerup.helios {
+            background: linear-gradient(180deg,#ffe066,#00d4ff);
+            border: 3px solid #fff;
+            box-shadow: 0 0 20px rgba(255,255,200,0.6);
+            border-radius:50%;
+            animation: powerup-float 2s ease-in-out infinite alternate, helios-glow 1.5s ease-in-out infinite;
+        }
+
+        .powerup.ares {
+            background: linear-gradient(45deg, #ff0000, #ff6600, #ff0000);
+            border: 3px solid #ffaa00;
+            box-shadow: 0 0 25px rgba(255,0,0,0.8);
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            animation: powerup-float 2s ease-in-out infinite alternate, ares-pulse 1s ease-in-out infinite;
+        }
+
+        .powerup.zeus {
+            background: linear-gradient(45deg, #ffff00, #ffffff, #00ffff);
+            border: 3px solid #ffff00;
+            box-shadow: 0 0 25px rgba(255,255,0,0.8);
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            animation: powerup-float 2s ease-in-out infinite alternate, zeus-spark 0.8s ease-in-out infinite;
+        }
+
+        .powerup.penetration {
+            background: linear-gradient(45deg, #ff6600, #ffff00, #ff6600);
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 25px rgba(255,102,0,0.8);
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            animation: powerup-float 2s ease-in-out infinite alternate, penetration-pulse 1.2s ease-in-out infinite;
+        }
+
+        .powerup.assist {
+            background: linear-gradient(45deg, #00ff88, #0088aa, #00ff88);
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 25px rgba(0,255,136,0.8);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            animation: powerup-float 2s ease-in-out infinite alternate, assist-glow 1s ease-in-out infinite;
+        }
+
+        @keyframes helios-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255,255,200,0.6); }
+            50% { box-shadow: 0 0 30px rgba(255,255,200,0.9); }
+        }
+
+        @keyframes ares-pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 25px rgba(255,0,0,0.8); }
+            50% { transform: scale(1.1); box-shadow: 0 0 35px rgba(255,0,0,1); }
+        }
+
+        @keyframes zeus-spark {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            25% { transform: scale(1.05); filter: brightness(1.3); }
+            75% { transform: scale(0.95); filter: brightness(1.1); }
+        }
+
+        @keyframes penetration-pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 25px rgba(255,102,0,0.8); }
+            50% { transform: scale(1.08); box-shadow: 0 0 30px rgba(255,255,0,0.9); }
+        }
+
+        @keyframes assist-glow {
+            0%, 100% { box-shadow: 0 0 25px rgba(0,255,136,0.8); }
+            50% { box-shadow: 0 0 35px rgba(0,255,136,1); }
+        }
+
+        .lightning-bolt {
+            position: absolute;
+            width: 3px;
+            background: linear-gradient(180deg, #ffff00, #ffffff);
+            box-shadow: 0 0 15px #ffff00;
+            border-radius: 2px;
+            z-index: 15;
+            animation: lightning-flicker 0.1s ease-in-out infinite alternate;
+        }
+
+        @keyframes lightning-flicker {
+            from { opacity: 0.8; transform: scaleX(1); }
+            to { opacity: 1; transform: scaleX(1.2); }
+        }
+
+        .ares-explosion {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ff6600, #ff0000, transparent);
+            animation: ares-boom 0.8s ease-out forwards;
+            z-index: 20;
+        }
+
+        @keyframes ares-boom {
+            0% { transform: scale(0); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.8; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
+        @keyframes explosion-fade {
+            0% { transform: scale(0); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        @keyframes screen-shake {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-2px, -1px); }
+            20% { transform: translate(2px, 1px); }
+            30% { transform: translate(-1px, 2px); }
+            40% { transform: translate(1px, -2px); }
+            50% { transform: translate(-2px, 1px); }
+            60% { transform: translate(2px, -1px); }
+            70% { transform: translate(-1px, -2px); }
+            80% { transform: translate(1px, 2px); }
+            90% { transform: translate(-2px, -1px); }
+        }
+
+        .game-over { 
+            position:fixed; 
+            top:50%; 
+            left:50%; 
+            transform: translate(-50%,-50%); 
+            background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(20,20,40,0.9)); 
+            border: 3px solid #ff4444; 
+            padding:40px; 
+            border-radius:20px; 
+            text-align:center; 
+            z-index:200; 
+            color:#ff4444; 
+            display:none; 
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(255,68,68,0.3);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 16px;
+            border: none;
+            background: linear-gradient(135deg, #4be37b, #2ec866);
+            color: #022;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            box-shadow: 0 6px 20px rgba(75,227,123,0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(75,227,123,0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #666, #888);
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(102,102,102,0.3);
+        }
+
+        .power-indicators {
+            position: fixed;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 150;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .power-indicator {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .power-indicator.active {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+        .power-indicator.triple {
+            background: linear-gradient(135deg, rgba(255,204,0,0.9), rgba(255,153,0,0.8));
+            border: 2px solid #ffcc00;
+            color: #000;
+        }
+
+        .power-indicator.helios {
+            background: linear-gradient(135deg, rgba(255,224,102,0.9), rgba(0,212,255,0.8));
+            border: 2px solid #00d4ff;
+            color: #000;
+        }
+
+        .power-indicator.ares {
+            background: linear-gradient(135deg, rgba(255,0,0,0.9), rgba(255,102,0,0.8));
+            border: 2px solid #ff0000;
+            color: #fff;
+        }
+
+        .power-indicator.zeus {
+            background: linear-gradient(135deg, rgba(255,255,0,0.9), rgba(255,255,255,0.8));
+            border: 2px solid #ffff00;
+            color: #000;
+        }
+
+        .power-indicator.penetration {
+            background: linear-gradient(135deg, rgba(255,102,0,0.9), rgba(255,255,0,0.8));
+            border: 2px solid #ff6600;
+            color: #000;
+        }
+
+        .power-indicator.assist {
+            background: linear-gradient(135deg, rgba(0,255,136,0.9), rgba(0,136,170,0.8));
+            border: 2px solid #00ff88;
+            color: #000;
+        }
+
+        .health-regen-indicator {
+            position: fixed;
+            bottom: 110px;
+            left: 275px;
+            padding: 4px 10px;
+            background: linear-gradient(135deg, rgba(0,255,100,0.9), rgba(0,200,80,0.8));
+            border: 2px solid #00ff66;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 110;
+        }
+
+        .health-regen-indicator.active {
+            opacity: 1;
+        }
+
+        /* Credits Scene */
+        .credits-scene {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #000000, #0a0020, #1a0040);
+            z-index: 2000;
+            display: none;
+            overflow: hidden;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .credits-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            animation: credits-scroll 45s linear forwards;
+            padding-bottom: 100px;
+        }
+
+        @keyframes credits-scroll {
+            0% { transform: translateY(100%); }
+            100% { transform: translateY(-100%); }
+        }
+
+        .credits-title {
+            font-size: 48px;
+            margin: 40px 0;
+            background: linear-gradient(45deg, #ff66ff, #00ffff, #66ff66);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(255,102,255,0.5);
+        }
+
+        .credits-section {
+            margin: 60px 0;
+            font-size: 24px;
+            color: #88ddff;
+        }
+
+        .credits-names {
+            font-size: 32px;
+            margin: 20px 0;
+            color: #ffff88;
+            text-shadow: 0 0 10px rgba(255,255,136,0.7);
+        }
+
+        .credits-subtitle {
+            font-size: 20px;
+            color: #aaa;
+            margin: 10px 0;
+        }
+
+        .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(2px 2px at 20px 30px, #00ffff, transparent), 
+                radial-gradient(2px 2px at 40px 70px, #ff00ff, transparent),
+                radial-gradient(1px 1px at 60px 20px, #ffff00, transparent);
+            background-repeat: repeat;
+            background-size: 200px 100px;
+            animation: starfield 15s linear infinite;
+        }
+
+        .victory-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 36px;
+            text-align: center;
+            color: #ffff00;
+            text-shadow: 0 0 20px rgba(255,255,0,0.8);
+            opacity: 0;
+            animation: victory-fade 5s ease-in-out forwards;
+        }
+
+        @keyframes victory-fade {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            30% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @media (max-width:768px){ 
+            .menu-content{flex-direction:column; padding: 30px;} 
+            .spaceship{width:40px;height:40px} 
+            .title { font-size: 36px; }
+            .power-indicators { top: 60px; gap: 4px; }
+            .power-indicator { font-size: 10px; padding: 4px 8px; }
+            .credits-title { font-size: 36px; }
+            .credits-section { font-size: 20px; }
+            .credits-names { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="menu" id="menu">
+        <div class="menu-content">
+            <div class="menu-left">
+                <div class="title">CYBER NAVIGATOR</div>
+                <div class="subtitle">Beta Edition v1.2.0 - Balanced & Skilled Gameplay</div>
+                <div style="color:#aaa;margin-top:12px;line-height:1.6;">
+                    NEW: Balanced Gameplay & Victory Credits Scene<br>
+                    50 Stages + Final Boss: HERMES GOD<br>
+                    Level 50: Triple Shot + Zeus UNLIMITED<br>
+                    Fair Enemy Stats + Skilled Power-ups<br>
+                    All systems optimized for balanced gameplay
+                </div>
+            </div>
+            <div class="menu-right">
+                <div class="hud-item" id="gameVersion">v1.2.0-Beta</div>
+                <button class="btn" onclick="startGame()" id="startBtn">START GAME</button>
+                <div style="margin-top:8px;display:flex;gap:12px;">
+                    <button class="btn btn-secondary" onclick="showCredits()">Credits</button>
+                    <button class="btn btn-secondary" onclick="openSettings()">Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="power-indicators">
+        <div class="power-indicator triple" id="tripleIndicator">Triple Shot</div>
+        <div class="power-indicator helios" id="heliosIndicator">Helios Shield</div>
+        <div class="power-indicator ares" id="aresIndicator">Ares Rage</div>
+        <div class="power-indicator zeus" id="zeusIndicator">Zeus Lightning</div>
+        <div class="power-indicator penetration" id="penetrationIndicator">Penetrating Bullets</div>
+        <div class="power-indicator assist" id="assistIndicator">Ship Assist</div>
+    </div>
+
+    <div class="boss-health-bar" id="bossHealthBar">
+        <div class="boss-health-fill" id="bossHealthFill"></div>
+    </div>
+    <div class="boss-name" id="bossName">BOSS</div>
+    <div class="hermes-boss" id="hermesName">⚡ HERMES GOD - ULTIMATE DESTROYER ⚡</div>
+
+    <div class="health-regen-indicator" id="healthRegenIndicator">Regenerating +5%/s</div>
+
+    <div class="notif" id="notif">Power-up Activated!</div>
+
+    <div class="game-world" id="gameWorld">
+        <div class="hud">
+            <div class="hud-item" id="waveInfo">Wave: 1</div>
+            <div class="hud-item" id="enemyInfo">Enemies: 0</div>
+            <div class="hud-item" id="batteryHUD">Battery: --%</div>
+            <div class="hud-item" id="fpsInfo">FPS: 60</div>
+        </div>
+
+        <div class="health-bar"><div class="health-fill" id="healthFill"></div></div>
+
+        <div class="controls">
+            <div class="score"><span id="scoreLabel">Score:</span> <span id="scoreValue">0</span></div>
+            <div>
+                <button class="btn btn-secondary" onclick="togglePause()" id="pauseBtn">Pause</button>
+                <button class="btn btn-secondary" onclick="openMenu()" id="menuBtn">Menu</button>
+            </div>
+        </div>
+
+        <div class="spaceship" id="spaceship"></div>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <h2 id="gameOverTitle">GAME OVER</h2>
+        <p id="finalScore" style="margin: 20px 0; font-size: 18px;">Final Score: 0</p>
+        <button class="btn" onclick="restartGame()">PLAY AGAIN</button>
+    </div>
+
+    <!-- Credits Scene -->
+    <div class="credits-scene" id="creditsScene">
+        <div class="stars"></div>
+        <div class="victory-message" id="victoryMessage">VICTORY! HERMES GOD DEFEATED!</div>
+        <div class="credits-content" id="creditsContent">
+            <div class="credits-title">CYBER NAVIGATOR</div>
+            <div class="credits-subtitle">Beta Version 1.2.0</div>
+            
+            <div class="credits-section">GAME DEVELOPMENT</div>
+            <div class="credits-names">LEAVES GAMES</div>
+            
+            <div class="credits-section">PROGRAMMING</div>
+            <div class="credits-names">MARCUS RASHFORD</div>
+            
+            <div class="credits-section">CODING TEAM</div>
+            <div class="credits-names">AARON SINGH</div>
+            <div class="credits-names">ALEX JOHNSON</div>
+            <div class="credits-names">SAMANTHA REYES</div>
+            <div class="credits-names">DAVID CHEN</div>
+            <div class="credits-names">LISA PARK</div>
+            
+            <div class="credits-section">GAME DESIGN</div>
+            <div class="credits-names">RYAN WALKER</div>
+            <div class="credits-names">MAYA PATEL</div>
+            
+            <div class="credits-section">ART & ANIMATION</div>
+            <div class="credits-names">CHLOE MARTINEZ</div>
+            <div class="credits-names">KEVIN ZHANG</div>
+            
+            <div class="credits-section">SOUND DESIGN</div>
+            <div class="credits-names">OLIVIA BROWN</div>
+            <div class="credits-names">JASON MILLER</div>
+            
+            <div class="credits-section">QUALITY ASSURANCE</div>
+            <div class="credits-names">TESTING TEAM ALPHA</div>
+            <div class="credits-names">BETA TESTERS GROUP</div>
+            
+            <div class="credits-section">SPECIAL THANKS</div>
+            <div class="credits-names">OUR PLAYERS</div>
+            <div class="credits-names">GAMING COMMUNITY</div>
+            <div class="credits-names">INDIE DEV SUPPORTERS</div>
+            
+            <div class="credits-section">PRODUCED BY</div>
+            <div class="credits-names">LEAVES GAMES STUDIO</div>
+            <div class="credits-subtitle">© 2023 All Rights Reserved</div>
+            
+            <div style="margin-top: 100px;">
+                <button class="btn" onclick="returnToMenu()" style="margin-top: 50px;">RETURN TO MENU</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        const gameState = {
+            isRunning: false,
+            isPaused: false,
+            score: 0,
+            wave: 1,
+            player: {
+                x: 0,
+                y: 0,
+                speed: 6,
+                health: 100,
+                maxHealth: 100,
+                level: 1,
+                xp: 0,
+                xpToNextLevel: 100,
+                bullets: [],
+                lastShot: 0,
+                shotDelay: 300,
+                powerUps: {
+                    triple: false,
+                    helios: false,
+                    ares: false,
+                    zeus: false,
+                    penetration: false,
+                    assist: false
+                },
+                powerUpTimers: {
+                    triple: 0,
+                    helios: 0,
+                    ares: 0,
+                    zeus: 0,
+                    penetration: 0,
+                    assist: 0
+                },
+                assistantShips: []
+            },
+            enemies: [],
+            enemyBullets: [],
+            powerUps: [],
+            explosions: [],
+            lightningBolts: [],
+            lastSpawn: 0,
+            spawnDelay: 1000,
+            lastHealthRegen: 0,
+            healthRegenDelay: 1000,
+            lastBatteryUpdate: 0,
+            batteryLevel: 100,
+            hermesDefeated: false,
+            hermesSpawned: false,
+            hermesHealth: 5000,
+            hermesMaxHealth: 5000,
+            hermesPhase: 1,
+            hermesAttackTimer: 0,
+            hermesMovementTimer: 0,
+            hermesPosition: { x: 0, y: 0 },
+            hermesTargetPosition: { x: 0, y: 0 }
+        };
+
+        // DOM Elements
+        const elements = {
+            menu: document.getElementById('menu'),
+            gameWorld: document.getElementById('gameWorld'),
+            spaceship: document.getElementById('spaceship'),
+            healthFill: document.getElementById('healthFill'),
+            scoreValue: document.getElementById('scoreValue'),
+            waveInfo: document.getElementById('waveInfo'),
+            enemyInfo: document.getElementById('enemyInfo'),
+            batteryHUD: document.getElementById('batteryHUD'),
+            fpsInfo: document.getElementById('fpsInfo'),
+            gameOver: document.getElementById('gameOver'),
+            finalScore: document.getElementById('finalScore'),
+            notif: document.getElementById('notif'),
+            bossHealthBar: document.getElementById('bossHealthBar'),
+            bossHealthFill: document.getElementById('bossHealthFill'),
+            bossName: document.getElementById('bossName'),
+            hermesName: document.getElementById('hermesName'),
+            tripleIndicator: document.getElementById('tripleIndicator'),
+            heliosIndicator: document.getElementById('heliosIndicator'),
+            aresIndicator: document.getElementById('aresIndicator'),
+            zeusIndicator: document.getElementById('zeusIndicator'),
+            penetrationIndicator: document.getElementById('penetrationIndicator'),
+            assistIndicator: document.getElementById('assistIndicator'),
+            healthRegenIndicator: document.getElementById('healthRegenIndicator'),
+            creditsScene: document.getElementById('creditsScene'),
+            creditsContent: document.getElementById('creditsContent'),
+            victoryMessage: document.getElementById('victoryMessage')
+        };
+
+        // Game Setup
+        function setupGame() {
+            // Set initial player position
+            gameState.player.x = window.innerWidth / 2;
+            gameState.player.y = window.innerHeight - 100;
+            updateSpaceshipPosition();
+            
+            // Set up event listeners
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('touchmove', handleTouchMove, { passive: false });
+            document.addEventListener('click', handleClick);
+            document.addEventListener('touchstart', handleTouchStart, { passive: false });
+            window.addEventListener('resize', handleResize);
+            
+            // Start game loop
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Input Handlers
+        function handleMouseMove(e) {
+            if (!gameState.isRunning || gameState.isPaused) return;
+            gameState.player.x = e.clientX;
+            gameState.player.y = e.clientY;
+            updateSpaceshipPosition();
+        }
+
+        function handleTouchMove(e) {
+            if (!gameState.isRunning || gameState.isPaused) return;
+            e.preventDefault();
+            if (e.touches.length > 0) {
+                gameState.player.x = e.touches[0].clientX;
+                gameState.player.y = e.touches[0].clientY;
+                updateSpaceshipPosition();
+            }
+        }
+
+        function handleClick(e) {
+            if (!gameState.isRunning || gameState.isPaused) return;
+            shootBullet();
+        }
+
+        function handleTouchStart(e) {
+            if (!gameState.isRunning || gameState.isPaused) return;
+            e.preventDefault();
+            shootBullet();
+        }
+
+        function handleResize() {
+            // Keep player within bounds on resize
+            gameState.player.x = Math.max(25, Math.min(window.innerWidth - 25, gameState.player.x));
+            gameState.player.y = Math.max(25, Math.min(window.innerHeight - 25, gameState.player.y));
+            updateSpaceshipPosition();
+        }
+
+        // Game Functions
+        function updateSpaceshipPosition() {
+            elements.spaceship.style.left = (gameState.player.x - 25) + 'px';
+            elements.spaceship.style.top = (gameState.player.y - 25) + 'px';
+        }
+
+        function shootBullet() {
+            const now = Date.now();
+            if (now - gameState.player.lastShot < gameState.player.shotDelay) return;
+            
+            gameState.player.lastShot = now;
+            
+            // Create bullet(s)
+            if (gameState.player.powerUps.triple) {
+                // Triple shot
+                createBullet(gameState.player.x - 15, gameState.player.y - 25, -0.2);
+                createBullet(gameState.player.x, gameState.player.y - 25, 0);
+                createBullet(gameState.player.x + 15, gameState.player.y - 25, 0.2);
+            } else {
+                // Single shot
+                createBullet(gameState.player.x, gameState.player.y - 25, 0);
+            }
+            
+            // Zeus lightning if active
+            if (gameState.player.powerUps.zeus) {
+                createLightningBolt();
+            }
+        }
+
+        function createBullet(x, y, angleOffset = 0) {
+            const bullet = document.createElement('div');
+            bullet.className = 'bullet';
+            if (gameState.player.powerUps.penetration) {
+                bullet.classList.add('penetrating');
+            }
+            bullet.style.left = x + 'px';
+            bullet.style.top = y + 'px';
+            elements.gameWorld.appendChild(bullet);
+            
+            gameState.player.bullets.push({
+                element: bullet,
+                x: x,
+                y: y,
+                speed: 12,
+                angle: angleOffset,
+                damage: gameState.player.powerUps.ares ? 40 : 20,
+                isPenetrating: gameState.player.powerUps.penetration
+            });
+        }
+
+        function createLightningBolt() {
+            const bolt = document.createElement('div');
+            bolt.className = 'lightning-bolt';
+            const startX = gameState.player.x;
+            const startY = gameState.player.y - 40;
+            const length = 150 + Math.random() * 100;
+            const angle = (Math.random() - 0.5) * 0.5; // Slight random angle
+            
+            bolt.style.left = startX + 'px';
+            bolt.style.top = startY + 'px';
+            bolt.style.height = length + 'px';
+            bolt.style.transform = `rotate(${angle}rad)`;
+            elements.gameWorld.appendChild(bolt);
+            
+            gameState.lightningBolts.push({
+                element: bolt,
+                x: startX,
+                y: startY,
+                length: length,
+                angle: angle,
+                damage: 15,
+                createdAt: Date.now()
+            });
+        }
+
+        function spawnEnemy() {
+            const now = Date.now();
+            if (now - gameState.lastSpawn < gameState.spawnDelay) return;
+            
+            gameState.lastSpawn = now;
+            
+            // Adjust spawn rate based on wave
+            gameState.spawnDelay = Math.max(200, 1000 - gameState.wave * 15);
+            
+            const enemyTypes = ['normal', 'tank', 'shooter'];
+            const typeWeights = [0.6, 0.2, 0.2];
+            
+            // Increase chance of stronger enemies as waves progress
+            if (gameState.wave > 10) {
+                typeWeights[0] = 0.4;
+                typeWeights[1] = 0.3;
+                typeWeights[2] = 0.3;
+            }
+            
+            if (gameState.wave > 20) {
+                typeWeights[0] = 0.3;
+                typeWeights[1] = 0.35;
+                typeWeights[2] = 0.35;
+            }
+            
+            let typeIndex = 0;
+            let rand = Math.random();
+            for (let i = 0; i < typeWeights.length; i++) {
+                rand -= typeWeights[i];
+                if (rand <= 0) {
+                    typeIndex = i;
+                    break;
+                }
+            }
+            
+            const type = enemyTypes[typeIndex];
+            const x = 50 + Math.random() * (window.innerWidth - 100);
+            const y = -50;
+            
+            const enemy = document.createElement('div');
+            enemy.className = 'enemy ' + type;
+            enemy.style.left = x + 'px';
+            enemy.style.top = y + 'px';
+            elements.gameWorld.appendChild(enemy);
+            
+            // Balanced enemy stats based on wave
+            const baseHealth = {
+                normal: 30,
+                tank: 80,
+                shooter: 40
+            };
+            
+            const baseSpeed = {
+                normal: 2,
+                tank: 1,
+                shooter: 1.5
+            };
+            
+            const healthMultiplier = 1 + (gameState.wave - 1) * 0.1;
+            const speedMultiplier = 1 + (gameState.wave - 1) * 0.02;
+            
+            const enemyObj = {
+                element: enemy,
+                x: x,
+                y: y,
+                type: type,
+                health: baseHealth[type] * healthMultiplier,
+                maxHealth: baseHealth[type] * healthMultiplier,
+                speed: baseSpeed[type] * speedMultiplier,
+                lastShot: 0,
+                shotDelay: type === 'shooter' ? 1500 : 0,
+                value: type === 'normal' ? 10 : type === 'tank' ? 25 : 15
+            };
+            
+            gameState.enemies.push(enemyObj);
+            
+            // Spawn miniboss every 5 waves
+            if (gameState.wave % 5 === 0 && gameState.enemies.length < 10 && !gameState.hermesSpawned) {
+                spawnMiniboss();
+            }
+            
+            // Spawn Hermes at wave 50
+            if (gameState.wave >= 50 && !gameState.hermesSpawned && !gameState.hermesDefeated) {
+                spawnHermes();
+            }
+        }
+
+        function spawnMiniboss() {
+            const x = window.innerWidth / 2;
+            const y = -100;
+            
+            const miniboss = document.createElement('div');
+            miniboss.className = 'enemy miniboss';
+            miniboss.style.left = x + 'px';
+            miniboss.style.top = y + 'px';
+            elements.gameWorld.appendChild(miniboss);
+            
+            const minibossObj = {
+                element: miniboss,
+                x: x,
+                y: y,
+                type: 'miniboss',
+                health: 300 + gameState.wave * 20,
+                maxHealth: 300 + gameState.wave * 20,
+                speed: 1,
+                lastShot: 0,
+                shotDelay: 1000,
+                value: 100
+            };
+            
+            gameState.enemies.push(minibossObj);
+            
+            // Show boss health bar
+            elements.bossHealthBar.style.display = 'block';
+            elements.bossName.style.display = 'block';
+            elements.bossName.textContent = 'MINIBOSS - WAVE ' + gameState.wave;
+            updateBossHealthBar(minibossObj.health, minibossObj.maxHealth);
+        }
+
+        function spawnHermes() {
+            gameState.hermesSpawned = true;
+            const x = window.innerWidth / 2;
+            const y = -150;
+            
+            const hermes = document.createElement('div');
+            hermes.className = 'enemy hermes';
+            hermes.style.left = x + 'px';
+            hermes.style.top = y + 'px';
+            elements.gameWorld.appendChild(hermes);
+            
+            const hermesObj = {
+                element: hermes,
+                x: x,
+                y: y,
+                type: 'hermes',
+                health: gameState.hermesHealth,
+                maxHealth: gameState.hermesMaxHealth,
+                speed: 2,
+                lastShot: 0,
+                shotDelay: 500,
+                value: 1000,
+                phase: 1
+            };
+            
+            gameState.enemies.push(hermesObj);
+            gameState.hermesPosition.x = x;
+            gameState.hermesPosition.y = y;
+            
+            // Show Hermes health bar and name
+            elements.bossHealthBar.style.display = 'block';
+            elements.hermesName.style.display = 'block';
+            updateBossHealthBar(gameState.hermesHealth, gameState.hermesMaxHealth);
+            
+            // Screen shake effect
+            elements.gameWorld.style.animation = 'screen-shake 0.5s ease-in-out';
+            setTimeout(() => {
+                elements.gameWorld.style.animation = '';
+            }, 500);
+            
+            showNotification('⚡ HERMES GOD HAS APPEARED! ⚡', 'hermes');
+        }
+
+        function updateBossHealthBar(current, max) {
+            const percent = (current / max) * 100;
+            elements.bossHealthFill.style.width = percent + '%';
+        }
+
+        function spawnPowerUp(x, y) {
+            // 30% chance to spawn a power-up
+            if (Math.random() < 0.7) return;
+            
+            const powerUpTypes = [
+                'triple', 'helios', 'ares', 'zeus', 'penetration', 'assist', 'health', 'speed'
+            ];
+            
+            // Weighted probabilities - balanced for fairness
+            const weights = [0.15, 0.15, 0.1, 0.08, 0.12, 0.1, 0.15, 0.15];
+            
+            let typeIndex = 0;
+            let rand = Math.random();
+            for (let i = 0; i < weights.length; i++) {
+                rand -= weights[i];
+                if (rand <= 0) {
+                    typeIndex = i;
+                    break;
+                }
+            }
+            
+            const type = powerUpTypes[typeIndex];
+            
+            const powerUp = document.createElement('div');
+            powerUp.className = 'powerup ' + type;
+            powerUp.style.left = x + 'px';
+            powerUp.style.top = y + 'px';
+            elements.gameWorld.appendChild(powerUp);
+            
+            gameState.powerUps.push({
+                element: powerUp,
+                x: x,
+                y: y,
+                type: type,
+                speed: 2
+            });
+        }
+
+        function collectPowerUp(powerUp) {
+            const type = powerUp.type;
+            const duration = 15000; // 15 seconds for most power-ups
+            
+            // Remove existing power-up of same type
+            gameState.player.powerUps[type] = true;
+            gameState.player.powerUpTimers[type] = Date.now() + duration;
+            
+            // Special cases
+            if (type === 'health') {
+                gameState.player.health = Math.min(gameState.player.maxHealth, gameState.player.health + 30);
+                updateHealthBar();
+                showNotification('Health +30', 'helios');
+            } else if (type === 'speed') {
+                gameState.player.speed = 9;
+                setTimeout(() => {
+                    if (gameState.isRunning) gameState.player.speed = 6;
+                }, 10000);
+                showNotification('Speed Boost!', 'speed');
+            } else if (type === 'assist') {
+                // Spawn assistant ships
+                if (gameState.player.assistantShips.length === 0) {
+                    spawnAssistantShips();
+                }
+                showNotification('Assistant Ships Activated!', 'assist');
+            } else {
+                showNotification(type.charAt(0).toUpperCase() + type.slice(1) + ' Power Activated!', type);
+            }
+            
+            // Update power indicators
+            updatePowerIndicators();
+            
+            // Remove power-up element
+            powerUp.element.remove();
+            gameState.powerUps = gameState.powerUps.filter(p => p !== powerUp);
+        }
+
+        function spawnAssistantShips() {
+            for (let i = 0; i < 2; i++) {
+                const assistant = document.createElement('div');
+                assistant.className = 'assistant-ship';
+                elements.gameWorld.appendChild(assistant);
+                
+                gameState.player.assistantShips.push({
+                    element: assistant,
+                    angle: i * Math.PI // Start on opposite sides
+                });
+            }
+        }
+
+        function updateAssistantShips() {
+            gameState.player.assistantShips.forEach((ship, index) => {
+                ship.angle += 0.02;
+                const radius = 80;
+                const x = gameState.player.x + Math.cos(ship.angle) * radius;
+                const y = gameState.player.y + Math.sin(ship.angle) * radius;
+                
+                ship.element.style.left = (x - 17.5) + 'px';
+                ship.element.style.top = (y - 17.5) + 'px';
+                
+                // Assistant ships shoot occasionally
+                if (Date.now() - ship.lastShot > 2000) {
+                    ship.lastShot = Date.now();
+                    createBullet(x, y - 10, 0);
+                }
+            });
+        }
+
+        function updatePowerIndicators() {
+            // Update visibility of power indicators
+            elements.tripleIndicator.classList.toggle('active', gameState.player.powerUps.triple);
+            elements.heliosIndicator.classList.toggle('active', gameState.player.powerUps.helios);
+            elements.aresIndicator.classList.toggle('active', gameState.player.powerUps.ares);
+            elements.zeusIndicator.classList.toggle('active', gameState.player.powerUps.zeus);
+            elements.penetrationIndicator.classList.toggle('active', gameState.player.powerUps.penetration);
+            elements.assistIndicator.classList.toggle('active', gameState.player.powerUps.assist);
+            
+            // Update spaceship appearance based on powers
+            elements.spaceship.classList.toggle('zeus-active', gameState.player.powerUps.zeus);
+            
+            // Level 50 special appearance
+            if (gameState.player.level >= 50) {
+                elements.spaceship.classList.add('level50');
+            }
+        }
+
+        function checkPowerUpExpiry() {
+            const now = Date.now();
+            for (const type in gameState.player.powerUpTimers) {
+                if (gameState.player.powerUpTimers[type] > 0 && now > gameState.player.powerUpTimers[type]) {
+                    gameState.player.powerUps[type] = false;
+                    gameState.player.powerUpTimers[type] = 0;
+                    
+                    // Special cleanup for assist power-up
+                    if (type === 'assist') {
+                        gameState.player.assistantShips.forEach(ship => ship.element.remove());
+                        gameState.player.assistantShips = [];
+                    }
+                    
+                    showNotification(type.charAt(0).toUpperCase() + type.slice(1) + ' Power Ended', type);
+                }
+            }
+            updatePowerIndicators();
+        }
+
+        function updateHealthRegen() {
+            const now = Date.now();
+            if (now - gameState.lastHealthRegen < gameState.healthRegenDelay) return;
+            
+            gameState.lastHealthRegen = now;
+            
+            // Health regeneration based on level (balanced)
+            const regenAmount = 1 + Math.floor(gameState.player.level / 10);
+            if (gameState.player.health < gameState.player.maxHealth) {
+                gameState.player.health = Math.min(gameState.player.maxHealth, gameState.player.health + regenAmount);
+                updateHealthBar();
+                
+                // Show regen indicator if health is low
+                if (gameState.player.health < gameState.player.maxHealth * 0.5) {
+                    elements.healthRegenIndicator.classList.add('active');
+                    elements.healthRegenIndicator.textContent = `Regenerating +${regenAmount}/s`;
+                } else {
+                    elements.healthRegenIndicator.classList.remove('active');
+                }
+            }
+        }
+
+        function updateBattery() {
+            const now = Date.now();
+            if (now - gameState.lastBatteryUpdate < 5000) return;
+            
+            gameState.lastBatteryUpdate = now;
+            gameState.batteryLevel = Math.max(10, gameState.batteryLevel - 1);
+            elements.batteryHUD.textContent = `Battery: ${gameState.batteryLevel}%`;
+            
+            // Low battery effects
+            if (gameState.batteryLevel < 30) {
+                elements.batteryHUD.style.background = 'linear-gradient(135deg, rgba(255,50,50,0.9), rgba(200,30,30,0.8))';
+            } else {
+                elements.batteryHUD.style.background = 'linear-gradient(135deg, rgba(0,10,30,0.9), rgba(10,20,40,0.8))';
+            }
+        }
+
+        function updateWave() {
+            // Progress to next wave if all enemies are cleared
+            if (gameState.enemies.length === 0 && !gameState.hermesSpawned) {
+                gameState.wave++;
+                elements.waveInfo.textContent = `Wave: ${gameState.wave}`;
+                
+                // Increase difficulty with each wave (balanced)
+                if (gameState.wave % 5 === 0) {
+                    showNotification(`Wave ${gameState.wave} - Difficulty Increased!`, 'ares');
+                }
+                
+                // Spawn initial enemies for new wave
+                for (let i = 0; i < 3 + Math.min(gameState.wave, 10); i++) {
+                    setTimeout(() => spawnEnemy(), i * 500);
+                }
+            }
+        }
+
+        function checkCollisions() {
+            // Player bullets vs enemies
+            gameState.player.bullets.forEach((bullet, bIndex) => {
+                gameState.enemies.forEach((enemy, eIndex) => {
+                    const dx = bullet.x - enemy.x;
+                    const dy = bullet.y - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // Collision detection (using approximate hitboxes)
+                    const hitboxSize = enemy.type === 'hermes' ? 70 : 
+                                      enemy.type === 'miniboss' ? 45 : 
+                                      enemy.type === 'tank' ? 35 : 25;
+                    
+                    if (distance < hitboxSize) {
+                        // Damage enemy
+                        enemy.health -= bullet.damage;
+                        
+                        // Create hit effect
+                        createHitEffect(bullet.x, bullet.y);
+                        
+                        // Check if enemy is defeated
+                        if (enemy.health <= 0) {
+                            // Add score
+                            gameState.score += enemy.value;
+                            elements.scoreValue.textContent = gameState.score;
+                            
+                            // Spawn power-up
+                            spawnPowerUp(enemy.x, enemy.y);
+                            
+                            // Create explosion
+                            createExplosion(enemy.x, enemy.y, enemy.type === 'hermes' ? 'large' : 'medium');
+                            
+                            // Special handling for Hermes
+                            if (enemy.type === 'hermes') {
+                                defeatHermes();
+                            }
+                            
+                            // Remove enemy
+                            enemy.element.remove();
+                            gameState.enemies.splice(eIndex, 1);
+                            
+                            // Update boss health bar if needed
+                            if (enemy.type === 'miniboss' || enemy.type === 'hermes') {
+                                if (gameState.enemies.some(e => e.type === 'miniboss' || e.type === 'hermes')) {
+                                    const boss = gameState.enemies.find(e => e.type === 'miniboss' || e.type === 'hermes');
+                                    updateBossHealthBar(boss.health, boss.maxHealth);
+                                } else {
+                                    elements.bossHealthBar.style.display = 'none';
+                                    elements.bossName.style.display = 'none';
+                                    elements.hermesName.style.display = 'none';
+                                }
+                            }
+                        } else {
+                            // Update boss health bar
+                            if (enemy.type === 'miniboss' || enemy.type === 'hermes') {
+                                updateBossHealthBar(enemy.health, enemy.maxHealth);
+                            }
+                        }
+                        
+                        // Remove bullet if not penetrating
+                        if (!bullet.isPenetrating) {
+                            bullet.element.remove();
+                            gameState.player.bullets.splice(bIndex, 1);
+                        }
+                    }
+                });
+            });
+            
+            // Lightning bolts vs enemies
+            gameState.lightningBolts.forEach((bolt, bIndex) => {
+                gameState.enemies.forEach((enemy, eIndex) => {
+                    // Simple line-rectangle collision detection
+                    const boltEndX = bolt.x + Math.sin(bolt.angle) * bolt.length;
+                    const boltEndY = bolt.y - Math.cos(bolt.angle) * bolt.length;
+                    
+                    // Check if enemy is near the lightning bolt
+                    const enemySize = enemy.type === 'hermes' ? 60 : 
+                                     enemy.type === 'miniboss' ? 45 : 
+                                     enemy.type === 'tank' ? 35 : 25;
+                    
+                    if (isPointNearLine(enemy.x, enemy.y, bolt.x, bolt.y, boltEndX, boltEndY, enemySize)) {
+                        enemy.health -= bolt.damage;
+                        createHitEffect(enemy.x, enemy.y);
+                        
+                        if (enemy.health <= 0) {
+                            gameState.score += enemy.value;
+                            elements.scoreValue.textContent = gameState.score;
+                            spawnPowerUp(enemy.x, enemy.y);
+                            createExplosion(enemy.x, enemy.y);
+                            
+                            if (enemy.type === 'hermes') {
+                                defeatHermes();
+                            }
+                            
+                            enemy.element.remove();
+                            gameState.enemies.splice(eIndex, 1);
+                            
+                            if (enemy.type === 'miniboss' || enemy.type === 'hermes') {
+                                if (gameState.enemies.some(e => e.type === 'miniboss' || e.type === 'hermes')) {
+                                    const boss = gameState.enemies.find(e => e.type === 'miniboss' || e.type === 'hermes');
+                                    updateBossHealthBar(boss.health, boss.maxHealth);
+                                } else {
+                                    elements.bossHealthBar.style.display = 'none';
+                                    elements.bossName.style.display = 'none';
+                                    elements.hermesName.style.display = 'none';
+                                }
+                            }
+                        } else {
+                            if (enemy.type === 'miniboss' || enemy.type === 'hermes') {
+                                updateBossHealthBar(enemy.health, enemy.maxHealth);
+                            }
+                        }
+                    }
+                });
+                
+                // Remove old lightning bolts
+                if (Date.now() - bolt.createdAt > 300) {
+                    bolt.element.remove();
+                    gameState.lightningBolts.splice(bIndex, 1);
+                }
+            });
+            
+            // Enemy bullets vs player
+            gameState.enemyBullets.forEach((bullet, bIndex) => {
+                const dx = bullet.x - gameState.player.x;
+                const dy = bullet.y - gameState.player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 30) { // Player hitbox
+                    // Helios shield protects from damage
+                    if (!gameState.player.powerUps.helios) {
+                        gameState.player.health -= 10;
+                        updateHealthBar();
+                        createHitEffect(gameState.player.x, gameState.player.y);
+                        
+                        // Screen shake on hit
+                        elements.gameWorld.style.animation = 'screen-shake 0.3s ease-in-out';
+                        setTimeout(() => {
+                            elements.gameWorld.style.animation = '';
+                        }, 300);
+                        
+                        if (gameState.player.health <= 0) {
+                            gameOver();
+                        }
+                    }
+                    
+                    // Remove bullet
+                    bullet.element.remove();
+                    gameState.enemyBullets.splice(bIndex, 1);
+                }
+            });
+            
+            // Enemies vs player (collision damage)
+            gameState.enemies.forEach((enemy, eIndex) => {
+                const dx = enemy.x - gameState.player.x;
+                const dy = enemy.y - gameState.player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                const enemyHitbox = enemy.type === 'hermes' ? 60 : 
+                                  enemy.type === 'miniboss' ? 45 : 
+                                  enemy.type === 'tank' ? 35 : 25;
+                
+                if (distance < enemyHitbox + 25) {
+                    // Collision damage
+                    if (!gameState.player.powerUps.helios) {
+                        gameState.player.health -= 20;
+                        updateHealthBar();
+                        createHitEffect(gameState.player.x, gameState.player.y);
+                        
+                        // Screen shake on collision
+                        elements.gameWorld.style.animation = 'screen-shake 0.4s ease-in-out';
+                        setTimeout(() => {
+                            elements.gameWorld.style.animation = '';
+                        }, 400);
+                        
+                        if (gameState.player.health <= 0) {
+                            gameOver();
+                        }
+                    }
+                    
+                    // Push player away
+                    const pushForce = 10;
+                    gameState.player.x -= (dx / distance) * pushForce;
+                    gameState.player.y -= (dy / distance) * pushForce;
+                    updateSpaceshipPosition();
+                    
+                    // Small explosion at collision point
+                    createExplosion(
+                        (enemy.x + gameState.player.x) / 2,
+                        (enemy.y + gameState.player.y) / 2,
+                        'small'
+                    );
+                }
+            });
+            
+            // Power-ups vs player
+            gameState.powerUps.forEach((powerUp, pIndex) => {
+                const dx = powerUp.x - gameState.player.x;
+                const dy = powerUp.y - gameState.player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 30) {
+                    collectPowerUp(powerUp);
+                }
+            });
+        }
+
+        function isPointNearLine(px, py, x1, y1, x2, y2, maxDistance) {
+            // Calculate the distance from point to line segment
+            const A = px - x1;
+            const B = py - y1;
+            const C = x2 - x1;
+            const D = y2 - y1;
+
+            const dot = A * C + B * D;
+            const lenSq = C * C + D * D;
+            let param = -1;
+            if (lenSq !== 0) param = dot / lenSq;
+
+            let xx, yy;
+
+            if (param < 0) {
+                xx = x1;
+                yy = y1;
+            } else if (param > 1) {
+                xx = x2;
+                yy = y2;
+            } else {
+                xx = x1 + param * C;
+                yy = y1 + param * D;
+            }
+
+            const dx = px - xx;
+            const dy = py - yy;
+            return Math.sqrt(dx * dx + dy * dy) < maxDistance;
+        }
+
+        function createHitEffect(x, y) {
+            const effect = document.createElement('div');
+            effect.style.position = 'absolute';
+            effect.style.left = x + 'px';
+            effect.style.top = y + 'px';
+            effect.style.width = '20px';
+            effect.style.height = '20px';
+            effect.style.background = 'radial-gradient(circle, #ffffff, #ff6600, transparent)';
+            effect.style.borderRadius = '50%';
+            effect.style.pointerEvents = 'none';
+            elements.gameWorld.appendChild(effect);
+            
+            setTimeout(() => {
+                effect.remove();
+            }, 300);
+        }
+
+        function createExplosion(x, y, size = 'small') {
+            const explosion = document.createElement('div');
+            explosion.className = 'ares-explosion';
+            
+            if (size === 'large') {
+                explosion.style.width = '200px';
+                explosion.style.height = '200px';
+            } else if (size === 'medium') {
+                explosion.style.width = '100px';
+                explosion.style.height = '100px';
+            } else {
+                explosion.style.width = '50px';
+                explosion.style.height = '50px';
+            }
+            
+            explosion.style.left = (x - parseInt(explosion.style.width) / 2) + 'px';
+            explosion.style.top = (y - parseInt(explosion.style.height) / 2) + 'px';
+            elements.gameWorld.appendChild(explosion);
+            
+            gameState.explosions.push({
+                element: explosion,
+                createdAt: Date.now()
+            });
+        }
+
+        function updateExplosions() {
+            gameState.explosions.forEach((explosion, index) => {
+                if (Date.now() - explosion.createdAt > 800) {
+                    explosion.element.remove();
+                    gameState.explosions.splice(index, 1);
+                }
+            });
+        }
+
+        function updateHealthBar() {
+            const percent = (gameState.player.health / gameState.player.maxHealth) * 100;
+            elements.healthFill.style.width = percent + '%';
+            
+            // Change color based on health
+            if (percent < 30) {
+                elements.healthFill.style.background = 'linear-gradient(90deg, #ff0000, #ff5500)';
+            } else if (percent < 60) {
+                elements.healthFill.style.background = 'linear-gradient(90deg, #ff0000, #ffaa00, #ffff00)';
+            } else {
+                elements.healthFill.style.background = 'linear-gradient(90deg, #ff0000, #ffaa00, #00ff00)';
+            }
+        }
+
+        function updateEnemies() {
+            gameState.enemies.forEach((enemy, index) => {
+                // Move enemy
+                if (enemy.type === 'hermes') {
+                    updateHermes
+                    (enemy);
+} else {
+enemy.y += enemy.speed;
+// Simple AI: move toward player horizontally
+                if (enemy.type === 'shooter' || enemy.type === 'miniboss') {
+                    const dx = gameState.player.x - enemy.x;
+                    if (Math.abs(dx) > 20) {
+                        enemy.x += (dx > 0 ? 1 : -1) * enemy.speed * 0.5;
+                    }
+                }
+            }
+            
+            // Update position
+            enemy.element.style.left = enemy.x + 'px';
+            enemy.element.style.top = enemy.y + 'px';
+            
+            // Shoot if shooter type
+            if ((enemy.type === 'shooter' || enemy.type === 'miniboss' || enemy.type === 'hermes') && 
+                Date.now() - enemy.lastShot > enemy.shotDelay) {
+                enemy.lastShot = Date.now();
+                createEnemyBullet(enemy.x, enemy.y + 25);
+            }
+            
+            // Remove if off screen
+            if (enemy.y > window.innerHeight + 100) {
+                enemy.element.remove();
+                gameState.enemies.splice(index, 1);
+            }
+        });
+        
+        elements.enemyInfo.textContent = `Enemies: ${gameState.enemies.length}`;
+    }
+
+    function updateHermes(hermes) {
+        // Hermes boss movement pattern
+        gameState.hermesMovementTimer++;
+        
+        if (gameState.hermesMovementTimer > 120) {
+            gameState.hermesMovementTimer = 0;
+            gameState.hermesTargetPosition.x = 100 + Math.random() * (window.innerWidth - 200);
+            gameState.hermesTargetPosition.y = 100 + Math.random() * 200;
+        }
+        
+        // Move toward target position
+        const dx = gameState.hermesTargetPosition.x - hermes.x;
+        const dy = gameState.hermesTargetPosition.y - hermes.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 5) {
+            hermes.x += (dx / distance) * hermes.speed;
+            hermes.y += (dy / distance) * hermes.speed;
+        }
+        
+        // Hermes phase transitions
+        if (hermes.health < hermes.maxHealth * 0.7 && hermes.phase === 1) {
+            hermes.phase = 2;
+            hermes.speed = 2.5;
+            hermes.shotDelay = 400;
+            showNotification('HERMES PHASE 2 - SPEED INCREASED!', 'hermes');
+        }
+        
+        if (hermes.health < hermes.maxHealth * 0.4 && hermes.phase === 2) {
+            hermes.phase = 3;
+            hermes.speed = 3;
+            hermes.shotDelay = 300;
+            showNotification('HERMES PHASE 3 - FINAL STAND!', 'hermes');
+        }
+        
+        // Hermes special attacks
+        gameState.hermesAttackTimer++;
+        if (gameState.hermesAttackTimer > 180) {
+            gameState.hermesAttackTimer = 0;
+            
+            // Triple shot in phase 2+
+            if (hermes.phase >= 2) {
+                createEnemyBullet(hermes.x - 20, hermes.y + 50, -0.1);
+                createEnemyBullet(hermes.x, hermes.y + 50, 0);
+                createEnemyBullet(hermes.x + 20, hermes.y + 50, 0.1);
+            } else {
+                createEnemyBullet(hermes.x, hermes.y + 50, 0);
+            }
+            
+            // Screen shake on Hermes attack
+            elements.gameWorld.style.animation = 'screen-shake 0.2s ease-in-out';
+            setTimeout(() => {
+                elements.gameWorld.style.animation = '';
+            }, 200);
+        }
+    }
+
+    function createEnemyBullet(x, y, angleOffset = 0) {
+        const bullet = document.createElement('div');
+        bullet.className = 'enemy-bullet';
+        bullet.style.left = x + 'px';
+        bullet.style.top = y + 'px';
+        elements.gameWorld.appendChild(bullet);
+        
+        gameState.enemyBullets.push({
+            element: bullet,
+            x: x,
+            y: y,
+            speed: 8,
+            angle: angleOffset
+        });
+    }
+
+    function updateBullets() {
+        // Player bullets
+        gameState.player.bullets.forEach((bullet, index) => {
+            bullet.y -= bullet.speed;
+            bullet.x += bullet.angle * 5;
+            
+            bullet.element.style.left = bullet.x + 'px';
+            bullet.element.style.top = bullet.y + 'px';
+            
+            // Remove if off screen
+            if (bullet.y < -50) {
+                bullet.element.remove();
+                gameState.player.bullets.splice(index, 1);
+            }
+        });
+        
+        // Enemy bullets
+        gameState.enemyBullets.forEach((bullet, index) => {
+            bullet.y += bullet.speed;
+            bullet.x += bullet.angle * 4;
+            
+            bullet.element.style.left = bullet.x + 'px';
+            bullet.element.style.top = bullet.y + 'px';
+            
+            // Remove if off screen
+            if (bullet.y > window.innerHeight + 50) {
+                bullet.element.remove();
+                gameState.enemyBullets.splice(index, 1);
+            }
+        });
+    }
+
+    function updatePowerUps() {
+        gameState.powerUps.forEach((powerUp, index) => {
+            powerUp.y += powerUp.speed;
+            powerUp.element.style.top = powerUp.y + 'px';
+            
+            // Remove if off screen
+            if (powerUp.y > window.innerHeight + 50) {
+                powerUp.element.remove();
+                gameState.powerUps.splice(index, 1);
+            }
+        });
+    }
+
+    function defeatHermes() {
+        gameState.hermesDefeated = true;
+        gameState.hermesSpawned = false;
+        
+        // Massive score bonus
+        gameState.score += 5000;
+        elements.scoreValue.textContent = gameState.score;
+        
+        // Show victory message and start credits
+        showVictoryCredits();
+    }
+
+    function showVictoryCredits() {
+        elements.creditsScene.style.display = 'block';
+        elements.victoryMessage.style.display = 'block';
+        
+        // Reset credits scroll position
+        elements.creditsContent.style.animation = 'none';
+        setTimeout(() => {
+            elements.creditsContent.style.animation = 'credits-scroll 45s linear forwards';
+        }, 100);
+    }
+
+    function showNotification(message, type = 'normal') {
+        elements.notif.textContent = message;
+        elements.notif.className = 'notif';
+        elements.notif.classList.add(type);
+        elements.notif.classList.add('show');
+        
+        setTimeout(() => {
+            elements.notif.classList.remove('show');
+        }, 3000);
+    }
+
+    function gameOver() {
+        gameState.isRunning = false;
+        elements.gameOver.style.display = 'block';
+        elements.finalScore.textContent = `Final Score: ${gameState.score}`;
+    }
+
+    function updatePlayerLevel() {
+        if (gameState.player.xp >= gameState.player.xpToNextLevel) {
+            gameState.player.level++;
+            gameState.player.xp -= gameState.player.xpToNextLevel;
+            gameState.player.xpToNextLevel = Math.floor(gameState.player.xpToNextLevel * 1.2);
+            
+            // Level up benefits
+            gameState.player.maxHealth = 100 + (gameState.player.level - 1) * 5;
+            gameState.player.health = gameState.player.maxHealth;
+            updateHealthBar();
+            
+            // Special abilities at certain levels
+            if (gameState.player.level === 10) {
+                showNotification('Level 10: Health Increased!', 'helios');
+            }
+            if (gameState.player.level === 20) {
+                showNotification('Level 20: Shot Speed Increased!', 'zeus');
+                gameState.player.shotDelay = Math.max(150, gameState.player.shotDelay - 50);
+            }
+            if (gameState.player.level === 30) {
+                showNotification('Level 30: Movement Speed Increased!', 'speed');
+                gameState.player.speed += 1;
+            }
+            if (gameState.player.level === 40) {
+                showNotification('Level 40: Triple Shot Unlocked!', 'triple');
+                gameState.player.powerUps.triple = true;
+                gameState.player.powerUpTimers.triple = Date.now() + 9999999; // Permanent
+            }
+            if (gameState.player.level === 50) {
+                showNotification('LEVEL 50: ZEUS LIGHTNING UNLIMITED!', 'zeus');
+                gameState.player.powerUps.zeus = true;
+                gameState.player.powerUpTimers.zeus = Date.now() + 9999999; // Permanent
+            }
+            
+            showNotification(`Level Up! Now Level ${gameState.player.level}`, 'normal');
+            updatePowerIndicators();
+        }
+    }
+
+    // Game Loop
+    let lastTime = 0;
+    let fps = 0;
+    let frameCount = 0;
+    let lastFpsUpdate = 0;
+
+    function gameLoop(timestamp) {
+        if (!lastTime) lastTime = timestamp;
+        const deltaTime = timestamp - lastTime;
+        lastTime = timestamp;
+        
+        frameCount++;
+        if (timestamp - lastFpsUpdate >= 1000) {
+            fps = Math.round((frameCount * 1000) / (timestamp - lastFpsUpdate));
+            elements.fpsInfo.textContent = `FPS: ${fps}`;
+            frameCount = 0;
+            lastFpsUpdate = timestamp;
+        }
+        
+        if (gameState.isRunning && !gameState.isPaused) {
+            // Update game state
+            spawnEnemy();
+            updateEnemies();
+            updateBullets();
+            updatePowerUps();
+            updateExplosions();
+            checkCollisions();
+            checkPowerUpExpiry();
+            updateHealthRegen();
+            updateBattery();
+            updateWave();
+            
+            if (gameState.player.powerUps.assist) {
+                updateAssistantShips();
+            }
+            
+            // Add XP gradually
+            gameState.player.xp += deltaTime * 0.01;
+            updatePlayerLevel();
+        }
+        
+        requestAnimationFrame(gameLoop);
+    }
+
+    // UI Functions
+    function startGame() {
+        gameState.isRunning = true;
+        elements.menu.classList.add('hidden');
+        resetGame();
+    }
+
+    function resetGame() {
+        // Reset game state
+        gameState.score = 0;
+        gameState.wave = 1;
+        gameState.player.health = 100;
+        gameState.player.maxHealth = 100;
+        gameState.player.level = 1;
+        gameState.player.xp = 0;
+        gameState.player.xpToNextLevel = 100;
+        gameState.player.bullets = [];
+        gameState.player.powerUps = {
+            triple: false,
+            helios: false,
+            ares: false,
+            zeus: false,
+            penetration: false,
+            assist: false
+        };
+        gameState.player.powerUpTimers = {
+            triple: 0,
+            helios: 0,
+            ares: 0,
+            zeus: 0,
+            penetration: 0,
+            assist: 0
+        };
+        gameState.enemies = [];
+        gameState.enemyBullets = [];
+        gameState.powerUps = [];
+        gameState.explosions = [];
+        gameState.lightningBolts = [];
+        gameState.hermesDefeated = false;
+        gameState.hermesSpawned = false;
+        gameState.hermesHealth = 5000;
+        gameState.hermesPhase = 1;
+        
+        // Reset UI
+        elements.scoreValue.textContent = '0';
+        elements.waveInfo.textContent = 'Wave: 1';
+        elements.healthFill.style.width = '100%';
+        elements.gameOver.style.display = 'none';
+        elements.bossHealthBar.style.display = 'none';
+        elements.bossName.style.display = 'none';
+        elements.hermesName.style.display = 'none';
+        elements.creditsScene.style.display = 'none';
+        
+        // Clear all game elements
+        document.querySelectorAll('.bullet, .enemy-bullet, .enemy, .powerup, .assistant-ship, .lightning-bolt, .ares-explosion').forEach(el => el.remove());
+        
+        // Reset player position
+        gameState.player.x = window.innerWidth / 2;
+        gameState.player.y = window.innerHeight - 100;
+        updateSpaceshipPosition();
+        
+        // Reset power indicators
+        updatePowerIndicators();
+    }
+
+    function restartGame() {
+        resetGame();
+        elements.gameOver.style.display = 'none';
+        gameState.isRunning = true;
+    }
+
+    function togglePause() {
+        gameState.isPaused = !gameState.isPaused;
+        elements.pauseBtn.textContent = gameState.isPaused ? 'Resume' : 'Pause';
+    }
+
+    function openMenu() {
+        gameState.isPaused = true;
+        elements.menu.classList.remove('hidden');
+    }
+
+    function showCredits() {
+        elements.creditsScene.style.display = 'block';
+        elements.victoryMessage.style.display = 'none';
+        elements.creditsContent.style.animation = 'none';
+        setTimeout(() => {
+            elements.creditsContent.style.animation = 'credits-scroll 45s linear forwards';
+        }, 100);
+    }
+
+    function returnToMenu() {
+        elements.creditsScene.style.display = 'none';
+        elements.menu.classList.remove('hidden');
+        gameState.isPaused = true;
+    }
+
+    function openSettings() {
+        // Simple settings implementation
+        const musicVolume = prompt('Music Volume (0-100):', '80');
+        const soundVolume = prompt('Sound Effects Volume (0-100):', '90');
+        alert(`Settings updated:\nMusic: ${musicVolume}%\nSound: ${soundVolume}%`);
+    }
+
+    // Initialize game
+    window.onload = function() {
+        setupGame();
+        updateHealthBar();
+    };
+</script>
+</body> 
+</html>
