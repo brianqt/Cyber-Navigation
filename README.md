@@ -4,7 +4,6 @@ Cyber Navigator
 
 Genre: Arcade • Space Shooter • Cyberpunk
 Edition: Beta v1.2.0
-File Size: ~[Insert Size Here] MB
 
 About the Game
 
